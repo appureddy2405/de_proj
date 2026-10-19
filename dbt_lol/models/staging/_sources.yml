@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Tables loaded by `python -m pipeline load` (mirror of the scraper's SQLite output).
+    schema: raw
+    tables:
+      - name: matches
+      - name: teams
+      - name: participants
+      - name: participant_items
+      - name: champions
+      - name: items

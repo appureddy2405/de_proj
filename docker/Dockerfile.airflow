@@ -1,0 +1,9 @@
+FROM apache/airflow:2.10.5-python3.12
+
+# Pipeline deps (pandas/pyarrow/psycopg/dbt) live in their own venv so they can
+# never conflict with Airflow's pinned dependencies.
+USER root
+RUN python -m venv /opt/pipeline-venv && chown -R airflow /opt/pipeline-venv
+USER airflow
+COPY requirements.txt requirements-pipeline.txt /tmp/
+RUN /opt/pipeline-venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-pipeline.txt

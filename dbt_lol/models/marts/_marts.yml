@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: fct_participant_match
+    description: One row per player per match, enriched with match context. PII-free.
+    columns:
+      - name: match_id
+        tests: [not_null]
+      - name: player_key
+        tests: [not_null]
+      - name: team_damage_share
+        tests:
+          - between_values:
+              arguments:
+                  min_value: 0
+                  max_value: 1
+    tests:
+      - unique:
+          column_name: "match_id || '-' || participant_id"
+
+  - name: mart_champion_performance
+    description: Win rate, pick rate and per-minute stats by patch, queue, champion and role.
+    columns:
+      - name: win_rate
+        tests:
+          - between_values:
+              arguments:
+                  min_value: 0
+                  max_value: 1
+      - name: games
+        tests: [not_null]
+    tests:
+      - unique:
+          column_name: "patch_version || queue_type || champion_id || position"
+
+  - name: mart_item_popularity
+    description: Item usage and build win rate by patch and queue.
+    columns:
+      - name: win_rate
+        tests:
+          - between_values:
+              arguments:
+                  min_value: 0
+                  max_value: 1
+
+  - name: mart_region_summary
+    description: Match counts, durations and detail coverage by patch, region and queue.
+    columns:
+      - name: detail_coverage
+        description: Share of matches that also have participant/team rows loaded.

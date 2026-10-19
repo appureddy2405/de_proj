@@ -1,0 +1,57 @@
+# Postgres is always started. Add profiles for the rest:
+#   docker compose --profile batch run --rm pipeline          # one-off full pipeline run
+#   docker compose --profile airflow up                       # Airflow UI on :8080
+#   docker compose --profile dashboard up                     # Streamlit on :8501
+x-warehouse-env: &warehouse-env
+  PGHOST: postgres
+  PGPORT: "5432"
+  PGUSER: lol
+  PGPASSWORD: lol
+  PGDATABASE: lol
+  WAREHOUSE_DSN: postgresql://lol:lol@postgres:5432/lol
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lol
+      POSTGRES_PASSWORD: lol
+      POSTGRES_DB: lol
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lol -d lol"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pipeline:
+    profiles: ["batch"]
+    build: {context: ., dockerfile: docker/Dockerfile.pipeline}
+    environment: *warehouse-env
+    volumes: [./data:/app/data]
+    depends_on: {postgres: {condition: service_healthy}}
+
+  dashboard:
+    profiles: ["dashboard"]
+    build: {context: ., dockerfile: docker/Dockerfile.pipeline}
+    entrypoint: ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0"]
+    environment: *warehouse-env
+    volumes: [./data:/app/data]
+    ports: ["8501:8501"]
+    depends_on: {postgres: {condition: service_healthy}}
+
+  airflow:
+    profiles: ["airflow"]
+    build: {context: ., dockerfile: docker/Dockerfile.airflow}
+    command: standalone
+    environment:
+      <<: *warehouse-env
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/orchestration/dags
+    volumes: [".:/opt/project"]
+    ports: ["8080:8080"]
+    depends_on: {postgres: {condition: service_healthy}}
+
+volumes:
+  pgdata:

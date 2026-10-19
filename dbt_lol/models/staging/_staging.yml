@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: stg_matches
+    columns:
+      - name: match_id
+        tests: [unique, not_null]
+      - name: queue_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                  values: ["Ranked Solo/Duo", "Ranked Flex 5v5"]
+      - name: duration_seconds
+        tests: [not_null]
+
+  - name: stg_teams
+    columns:
+      - name: team_id
+        tests:
+          - accepted_values:
+              arguments:
+                  values: [100, 200]
+                  quote: false
+
+  - name: stg_participants
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                  to: ref('stg_matches')
+                  field: match_id
+      - name: player_key
+        description: md5 of the Riot PUUID (pseudonymised).
+        tests: [not_null]
+      - name: position
+        tests:
+          - accepted_values:
+              arguments:
+                  values: [TOP, JUNGLE, MIDDLE, BOTTOM, SUPPORT]
+      - name: champion_id
+        tests:
+          - relationships:
+              arguments:
+                  to: ref('stg_champions')
+                  field: champion_id
+
+  - name: stg_champions
+    columns:
+      - name: champion_id
+        tests: [unique, not_null]
